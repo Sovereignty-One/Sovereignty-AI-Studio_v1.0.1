@@ -7,14 +7,19 @@ permissions:
   contents: read
 
 jobs:
-  sovereign-guard-recovery:
-    name: Sovereign guard recovery / visible execution
-    runs-on: ubuntu-24.04-arm
+  sovereign-guard:
+    name: Sovereign guard
+    runs-on: [self-hosted, linux, arm64]
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - name: Report workflow state
+        shell: bash
         run: |
           set -euo pipefail
           echo "WORKFLOW_VISIBLE=true"
           echo "WORKFLOW_FILE=.github/workflows/sovereign-guard.yml"
-          echo "RECOVERY_MODE=VISIBLE"
-          echo "ORIGINAL_IMPLEMENTATION_REQUIRES_RESTORATION=true"
+          echo "RUNNER=${RUNNER_NAME}/${RUNNER_OS}/${RUNNER_ARCH}"
+          uname -m
