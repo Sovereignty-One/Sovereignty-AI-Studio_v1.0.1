@@ -25,7 +25,11 @@ jobs:
           printf 'WATCHDOG_STATUS=STARTED\n'
           printf 'WATCHDOG_EVENT=%s\n' "${GITHUB_EVENT_NAME}"
           printf 'WATCHDOG_RUN_ID=%s\n' "${GITHUB_RUN_ID}"
-          printf 'WATCHDOG_HEAD_SHA=%s\n' "${GITHUB_SHA}"
+          printf 'FULL_SHA=%s\n' "${GITHUB_SHA}"
+          printf 'HEAD_SHA_LEN=%s\n' "${#GITHUB_SHA}"
+          test "${#GITHUB_SHA}" -eq 40
+          printf 'HATCH=OPEN\n'
+          printf 'PAYLOAD_ENTERED=true\n'
       - name: Checkout without external action
         env:
           GH_TOKEN: ${{ github.token }}
@@ -63,4 +67,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           printf 'WATCHDOG_STATUS=PASS\n'
+          printf 'FULL_SHA=%s\n' "${GITHUB_SHA}"
+          printf 'HATCH=OPEN\n'
+          printf 'PAYLOAD_ENTERED=true\n'
           printf 'WATCHDOG_RESULT=VISIBLE_LOCAL_RUNNER_CONTRACTS_VERIFIED\n'
