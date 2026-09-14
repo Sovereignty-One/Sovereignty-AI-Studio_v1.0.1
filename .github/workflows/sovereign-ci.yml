@@ -7,14 +7,19 @@ permissions:
   contents: read
 
 jobs:
-  sovereign-ci-recovery:
-    name: Sovereign CI recovery / visible execution
-    runs-on: ubuntu-24.04-arm
+  sovereign-ci:
+    name: Sovereign CI
+    runs-on: [self-hosted, linux, arm64]
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - name: Report workflow state
+        shell: bash
         run: |
           set -euo pipefail
           echo "WORKFLOW_VISIBLE=true"
           echo "WORKFLOW_FILE=.github/workflows/sovereign-ci.yml"
-          echo "RECOVERY_MODE=VISIBLE"
-          echo "ORIGINAL_IMPLEMENTATION_REQUIRES_RESTORATION=true"
+          echo "RUNNER=${RUNNER_NAME}/${RUNNER_OS}/${RUNNER_ARCH}"
+          uname -m
