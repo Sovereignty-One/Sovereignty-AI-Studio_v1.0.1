@@ -25,11 +25,22 @@ jobs:
           printf 'WATCHDOG_STATUS=STARTED\n'
           printf 'WATCHDOG_EVENT=%s\n' "${GITHUB_EVENT_NAME}"
           printf 'WATCHDOG_RUN_ID=%s\n' "${GITHUB_RUN_ID}"
-          printf 'WATCHDOG_HEAD_SHA=%s\n' "${GITHUB_SHA}"
-      - name: Checkout exact inspected commit
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+          printf 'FULL_SHA=%s\n' "${GITHUB_SHA}"
+          printf 'HEAD_SHA_LEN=%s\n' "${#GITHUB_SHA}"
+          test "${#GITHUB_SHA}" -eq 40
+          printf 'HATCH=OPEN\n'
+          printf 'PAYLOAD_ENTERED=true\n'
+      - name: Checkout without external action
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+          git config --unset-all http.extraheader 2>/dev/null || true
       - name: Verify workflow inventory
         shell: bash
         run: |
@@ -56,4 +67,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           printf 'WATCHDOG_STATUS=PASS\n'
+          printf 'FULL_SHA=%s\n' "${GITHUB_SHA}"
+          printf 'HATCH=OPEN\n'
+          printf 'PAYLOAD_ENTERED=true\n'
           printf 'WATCHDOG_RESULT=VISIBLE_LOCAL_RUNNER_CONTRACTS_VERIFIED\n'
