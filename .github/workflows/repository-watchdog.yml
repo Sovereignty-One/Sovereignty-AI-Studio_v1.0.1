@@ -15,7 +15,7 @@ concurrency:
 jobs:
   watch:
     name: Repository Watchdog (visible)
-    runs-on: macos-latest
+    runs-on: [self-hosted, linux, arm64]
     timeout-minutes: 10
     steps:
       - name: Watchdog startup — visible
@@ -44,10 +44,10 @@ jobs:
         run: |
           set -Eeuo pipefail
           for workflow in ci.yml ci-sovereign.yml python-ci.yml Quart.yml; do
-            if grep -Eq 'runs-on: macos-latest ([[:space:]]|$)' ".github/workflows/$workflow"; then
-              echo "macos-latest contract present in $workflow"
+            if grep -Eq 'runs-on: \[self-hosted' ".github/workflows/$workflow"; then
+              echo "self-hosted contract present in $workflow"
             else
-              echo "WARNING: no explicit runs-on in $workflow"
+              echo "WARNING: no explicit self-hosted runs-on in $workflow"
             fi
           done
           echo 'RUNNER_CONTRACTS=PASS'
