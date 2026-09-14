@@ -54,8 +54,7 @@ jobs:
           print('canonical dependency closure: PASS')
           PY
       - name: Validate canonical local OAuth
-        run: 
-         python3 scripts/validate-local-oauth.py
+        run: python3 scripts/validate-local-oauth.py
       - name: OAuth generator contract tests
         run:         
          python3 -m pytest -q tests/test_oauth_local_generator.py
