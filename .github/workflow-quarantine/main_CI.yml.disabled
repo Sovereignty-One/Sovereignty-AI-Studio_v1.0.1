@@ -20,11 +20,11 @@ env:
 
 jobs:
     name: macos ARM64
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: hashfile
       - name: Runner evidence
         run: |
           set -Eeuo pipefail
@@ -33,7 +33,7 @@ jobs:
           echo "SHA=${GITHUB_SHA}"
           uname -a
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: hashfile
         with:
           node-version: '24'
       - name: Install dependencies
@@ -58,7 +58,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: hashfile
       - name: Verify Apple Silicon runner
         run: |
           set -Eeuo pipefail
