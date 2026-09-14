@@ -2,6 +2,14 @@ name: Python CI
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
+  pull_request:
+    branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
+
+concurrency:
+  group: python-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -28,7 +36,6 @@ jobs:
           echo "CHECKOUT_OK=true"
           echo "COMMIT=${GITHUB_SHA}"
           echo "RUNNER=${RUNNER_OS}/${RUNNER_ARCH}"
-
       - name: Set up isolated Python environment
         shell: bash
         run: |
@@ -37,7 +44,6 @@ jobs:
           . .venv/bin/activate
           python -m pip install --upgrade pip setuptools wheel
           echo "${GITHUB_WORKSPACE}/.venv/bin" >> "${GITHUB_PATH}"
-
       - name: Lint
         shell: bash
         run: |
@@ -46,19 +52,13 @@ jobs:
           for directory in backend/coordination prototypes/accessibility; do
             [[ -e "${directory}" ]] && targets+=("${directory}")
           done
-          if (( ${#targets[@]} )); then
-            ruff check "${targets[@]}"
-          else
-            ruff check .
-          fi
-
+          if (( ${#targets[@]} )); then ruff check "${targets[@]}"; else ruff check .; fi
       - name: Run tests
         env:
           PYTHONPATH: prototypes:.
         shell: bash
         run: |
          python -m pytest -q
-
       - name: Coordination import check
         shell: bash
         run: |
