@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: dep-health ${{ github.ref }}
+  group: dep-health-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -22,8 +22,8 @@ jobs:
     name: Python — CVE audit
     runs-on: [self-hosted, linux, arm64]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 1
       - name: Install pip-audit
@@ -40,8 +40,8 @@ jobs:
     name: Python — requirements validation
     runs-on: [self-hosted, linux, arm64]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 1
       - name: install
@@ -56,8 +56,8 @@ jobs:
     name: Node.js — CVE audit
     runs-on: [self-hosted, linux, arm64]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 1
       - name: npm audit
@@ -73,8 +73,8 @@ jobs:
     name: Lint requirements files
     runs-on: [self-hosted, linux, arm64]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 1
       - name: Validate requirements structure
