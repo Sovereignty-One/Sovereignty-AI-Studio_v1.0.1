@@ -1,11 +1,11 @@
-name: Python CI
+name: CI
 
 on:
   workflow_dispatch:
   push:
-    branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420" ]
+    branches: [main, Claude, "GPT/Codex", ara-hardened, "copilot/main", Collaboration, duckAI, devassist420]
   pull_request:
-    branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420" ]
+    branches: [main, Claude, "GPT/Codex", ara-hardened, "copilot/main", Collaboration, duckAI, devassist420]
 
 concurrency:
   group: python-ci-${{ github.workflow }}-${{ github.ref }}
