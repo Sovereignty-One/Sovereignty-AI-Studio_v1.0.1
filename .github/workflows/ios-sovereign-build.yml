@@ -1,11 +1,11 @@
 name: iOS Sovereign Build (local-first)
 
-# PR runs PAUSED — workflow kept. Push ara-hardened + manual only.
+
 on:
   push:
-    branches: [ ara-hardened ]
+    branches: [ "Collaboration, main, Claude, GPT/Codex, ara-hardened, copilot/main, duckAI, devassist420" ]
   workflow_dispatch:
-  # pull_request: paused
+  
 
 env:
   PYTHONPATH: .:./backend
@@ -15,18 +15,18 @@ permissions:
 
 concurrency:
   group: ios-sovereign-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   lightweight-security:
-    runs-on: ['self-hosted Linux arm64']
-    timeout-minutes: 10
+    runs-on: ['self-hosted, macos, arm64']
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.11 3.12 3.13'
 
       - name: Local-only build context manifest (no oqs download)
         run: |
@@ -71,7 +71,7 @@ jobs:
 
   build:
     needs: lightweight-security
-    runs-on: ['self-hosted Linux arm64']
+    runs-on: ['self-hosted, macos, arm64']
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -82,16 +82,16 @@ jobs:
           if [ -f project.yml ] || [ -f project.yaml ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "No project.yml — skipping XcodeGen/build on this runner"
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "project.yml — run XcodeGen/build on this runner"
           fi
 
       - name: Note on iOS compile path
         if: steps.xcodegen.outputs.present == 'true'
         run: |
-          echo "XcodeGen/xcodebuild require macOS. This job is on self-hosted Linux arm64 per owner policy."
+          echo "XcodeGen/xcodebuild require macOS. This job is on self-hosted macos arm64 per owner policy."
 
-      - name: Create local-only build manifest (no PQC download)
+      - name: Create local-first build manifest (PQC download)
         run: |
           python3 <<'PY'
           import hashlib, hmac, json, secrets, time
@@ -113,9 +113,9 @@ jobs:
               'timestamp': int(time.time()),
               'app': 'StreamStudioApp',
               'platform': 'iOS',
-              'runner': 'self-hosted Linux arm64',
+              'runner': 'self-hosted macos arm64',
               'signing_backend': 'hmac-sha256-ci-local',
-              'pr_trigger': 'paused',
+              'pr_trigger': 'true',
           }
 
           signer = LocalCISigner()
@@ -136,4 +136,4 @@ jobs:
         with:
           name: ios-sovereign-build-artifacts
           path: ios-build-manifest.json
-          if-no-files-found: ignore
+          if-no-files-found: alert Owner
