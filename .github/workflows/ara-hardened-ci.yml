@@ -6,16 +6,13 @@ name: ara-hardened-unit-ci-local
 on:
   workflow_dispatch:
   push:
-    branches:
-      - ara-hardened
+    branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, Devassist420" ]
   pull_request:
-    branches:
-      - ara-hardened
-      - Collaboration
+    branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420" ]
 
 concurrency:
   group: ara-hardened-unit-ci-local-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -26,7 +23,7 @@ env:
 jobs:
   light:
     name: Visible local coordination and accessibility checks
-    runs-on: ubuntu-latest
+    runs-on: ['self-hosted, macos, arm64']
     timeout-minutes: 15
     steps:
       - name: Checkout
