@@ -9,10 +9,10 @@ permissions:
 jobs:
   lint-autofix:
     name: Lint autofix
-    runs-on: [self-hosted, linux, arm64]
+    runs-on: ['self-hosted, macos, arm64']
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 1
       - name: Report workflow state
