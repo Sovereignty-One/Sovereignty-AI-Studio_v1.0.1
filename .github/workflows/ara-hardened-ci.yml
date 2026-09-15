@@ -6,9 +6,9 @@ name: ara-hardened-unit-ci-local
 on:
   workflow_dispatch:
   push:
-    branches: [ "Collaboration, main, Claude, GPT/Codex, ara-hardened, copilot/main, duckAI, devassist420" ]
+    branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, Devassist420" ]
   pull_request:
-    branches: [ "Collaboration, main, Claude, GPT/Codex, ara-hardened, copilot/main, duckAI, devassist420" ]
+    branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420" ]
 
 concurrency:
   group: ara-hardened-unit-ci-local-${{ github.workflow }}-${{ github.ref }}
