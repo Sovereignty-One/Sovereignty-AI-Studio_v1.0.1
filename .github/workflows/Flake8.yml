@@ -3,9 +3,9 @@ name: Flake8 Lint
 on:
   workflow_dispatch:
   push:
-    branches: [Collaboration, main, Claude, "GPT/Codex", ara-hardened, "copilot/main", duckAI, devassist420]
+    branches: [ "Collaboration, main, Claude, GPT/Codex, ara-hardened, copilot/main, duckAI, devassist420" ]
   pull_request:
-    branches: [Collaboration, main, Claude, "GPT/Codex", ara-hardened, "copilot/main", duckAI, devassist420]
+    branches: [ "Collaboration, main, Claude, GPT/Codex, ara-hardened, copilot/main, duckAI, devassist420" ]
 
 permissions:
   contents: read
@@ -13,7 +13,7 @@ permissions:
 jobs:
   flake8-recovery:
     name: Flake8 recovery / visible execution
-    runs-on: ubuntu-latest
+    runs-on: ['self-hosted, macos, arm64']
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
