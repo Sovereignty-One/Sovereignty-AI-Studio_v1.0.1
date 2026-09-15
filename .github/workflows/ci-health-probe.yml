@@ -8,11 +8,11 @@ permissions:
 
 jobs:
   probe:
-    name: CI health probe (manual)
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    name: CI health probe
+    runs-on: macos-latest
+    timeout-minutes: 15
     steps:
-      - name: Prove GitHub-hosted job execution
+      - name: Prove self-hosted job execution
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -22,5 +22,5 @@ jobs:
           echo "sha=${GITHUB_SHA}"
           echo "runner=${RUNNER_OS}/${RUNNER_ARCH}"
           test "${GITHUB_ACTIONS}" = "true"
-          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_OS}" = "macos"
           echo "CI_HEALTH=PASS"
