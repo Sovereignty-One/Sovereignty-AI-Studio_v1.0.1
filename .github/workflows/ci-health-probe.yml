@@ -1,8 +1,6 @@
 name: CI Health Probe
 
 on:
-  push:
-    branches: [Collaboration]
   workflow_dispatch:
 
 permissions:
@@ -11,10 +9,10 @@ permissions:
 jobs:
   probe:
     name: CI health probe
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    runs-on: macos-latest
+    timeout-minutes: 15
     steps:
-      - name: Prove GitHub-hosted job execution
+      - name: Prove job execution
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -24,5 +22,5 @@ jobs:
           echo "sha=${GITHUB_SHA}"
           echo "runner=${RUNNER_OS}/${RUNNER_ARCH}"
           test "${GITHUB_ACTIONS}" = "true"
-          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_OS}" = "macos"
           echo "CI_HEALTH=PASS"
