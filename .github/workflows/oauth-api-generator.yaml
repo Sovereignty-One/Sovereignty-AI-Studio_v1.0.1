@@ -21,14 +21,14 @@ defaults:
 jobs:
   oauth-contract:
     name: OAUTH — local contract
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 10
     permissions: {contents: read}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@HashFiles
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ github.token }}
       - name: Install canonical repository dependencies
         run: |
@@ -61,14 +61,14 @@ jobs:
 
   node-check:
     name: Node validation
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: macos-latest
+    timeout-minutes: 30
     permissions: {contents: read}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@HashFiles
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ github.token }}
       - name: Node checks
         run: |
@@ -77,14 +77,14 @@ jobs:
 
   security-scan:
     name: Security scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: macos-latest
+    timeout-minutes: 30
     permissions: {contents: read}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ github.token }}
       - name: Install test dependencies
         run: python3 -m pip install --upgrade pip pytest
@@ -92,6 +92,3 @@ jobs:
         run: |
           test -f scripts/security_policy_scan.py
           python3 -m pytest -q tests/contracts/security/test_security_policy_scan.py
-
-  # Sovereign ARM64 execution is centralized in ci-sovereign.yml.
-  # No duplicate self-hosted handoff is permitted here.
