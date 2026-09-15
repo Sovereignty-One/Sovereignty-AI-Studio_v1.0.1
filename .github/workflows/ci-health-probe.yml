@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 15
     steps:
-      - name: Prove self-hosted job execution
+      - name: Prove job execution
         shell: bash
         run: |
           set -Eeuo pipefail
