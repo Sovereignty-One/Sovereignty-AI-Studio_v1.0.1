@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # GitHub Actions Self-Hosted Runner
+  # Works on Linux, Mac (Docker Desktop), Windows (WSL2)
+  # Labels: self-hosted, linux, rust-builder (customize as needed)
+  
+  github-runner:
+    image: myoung34/github-runner:latest
+    container_name: sovereignty-actions-runner
+    restart: always
+    environment:
+      # GitHub Personal Access Token (requires admin:repo_hook, repo scope)
+      # Generate at: https://github.com/settings/tokens
+      GITHUB_ACCESS_TOKEN: ${GITHUB_ACCESS_TOKEN}
+      
+      # Repository to register runner with
+      GITHUB_REPOSITORY: Sovereignty-One/Sovereignty-AI-Studio_v1.0.1
+      
+      # Runner name (visible in GitHub UI)
+      GITHUB_RUNNER_NAME: local-${HOSTNAME:-runner}
+      
+      # Labels for job routing (comma-separated)
+      # These allow workflows to target this runner specifically
+      RUNNER_LABELS: self-hosted,linux,rust-builder,local
+      
+      # Allow runner to work offline briefly
+      RUNNER_ALLOW_RUNASROOT: "true"
+      
+    volumes:
+      # Persist runner state across restarts
+      - ./runner-data:/home/runner
+      
+      # Mount Docker socket for Docker-in-Docker builds (optional)
+      - /var/run/docker.sock:/var/run/docker.sock
+      
+      # Mount workspace
+      - ../:/home/runner/work/Sovereignty-AI-Studio_v1.0.1
+    
+    ports:
+      - "8080:8080"  # Optional: metrics/logs endpoint
+    
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "runsvc.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Local approval/review agent
+  # Runs simple rule-based approvals (no ChatGPT/external APIs)
+  
+  approval-agent:
+    image: node:18-alpine
+    container_name: sovereignty-approval-agent
+    restart: always
+    working_dir: /app
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_REPO: Sovereignty-One/Sovereignty-AI-Studio_v1.0.1
+      APPROVAL_RULES: |
+        {
+          "auto_approve_on": [
+            "workflow: reusable",
+            "author: Appel420",
+            "label: safe-to-merge"
+          ],
+          "require_review_on": [
+            "large-change",
+            "security-related"
+          ]
+        }
+    volumes:
+      - ./approval-agent:/app
+    command: node index.js
+
+volumes:
+  runner-data:
+    driver: local
+
+networks:
+  default:
+    name: sovereignty-ci
