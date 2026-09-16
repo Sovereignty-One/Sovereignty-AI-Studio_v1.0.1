@@ -9,7 +9,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
+o
 permissions:
   contents: read
 
@@ -48,7 +48,7 @@ jobs:
         run: |
           if [[ -f requirements.txt ]]; then
             python3 -m pip list --updated
-          elsei
+          else
             echo "requirements.txt — no skipping"
           fi
 
