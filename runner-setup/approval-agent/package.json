@@ -1,0 +1,29 @@
+{
+  "name": "sovereignty-approval-agent",
+  "version": "1.0.0",
+  "description": "Local, rule-based GitHub PR approval agent",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo 'Tests not implemented'"
+  },
+  "keywords": [
+    "github",
+    "approval",
+    "agent",
+    "ci-cd"
+  ],
+  "author": "Appel420",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "url": "^0.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
