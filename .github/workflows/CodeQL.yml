@@ -9,8 +9,8 @@ permissions:
 jobs:
   analyze:
     name: Local Security Gate
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: macos-latest
+    timeout-minutes: 60
     steps:
       - name: Checkout repository without external actions
         env:
@@ -27,7 +27,7 @@ jobs:
       - name: Verify runner
         run: |
           set -Eeuo pipefail
-          test "${RUNNER_OS}" = "Linux"
+          test "${RUNNER_OS}" = "macos"
       - name: Scan workflow action policy
         shell: bash
         run: |
