@@ -48,7 +48,7 @@ jobs:
         run: |
           if [[ -f requirements.txt ]]; then
             python3 -m pip list --updated
-          else
+          elsei
             echo "requirements.txt — no skipping"
           fi
 
