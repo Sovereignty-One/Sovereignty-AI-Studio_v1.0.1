@@ -7,30 +7,42 @@ on:
     branches: [Collaboration]
   workflow_dispatch:
 
+concurrency:
+  group: release-readiness-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
 jobs:
   release-readiness:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    name: Release readiness gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+      - name: Checkout repository without external actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+          git config --unset-all http.extraheader 2>/dev/null || true
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: node-bridge/package-lock.json
+      - name: Startup
+        run: |
+          set -Eeuo pipefail
+          echo "event=${GITHUB_EVENT_NAME}"
+          echo "ref=${GITHUB_REF}"
+          echo "sha=${GITHUB_SHA}"
+          echo "python=$(python3 --version)"
+          echo "node=$(node --version)"
+          echo "npm=$(npm --version)"
+          echo "STARTUP=PASS"
 
       - name: Install root Node dependencies
         run: npm ci --ignore-scripts
@@ -39,7 +51,7 @@ jobs:
         run: npm --prefix node-bridge ci --ignore-scripts
 
       - name: Install Python runtime dependencies
-        run: python -m pip install -r requirements-runtime.txt
+        run: python3 -m pip install --disable-pip-version-check -r requirements-runtime.txt
 
       - name: Run release gate
         run: bash scripts/release-verify.sh
