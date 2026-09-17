@@ -33,6 +33,12 @@ jobs:
           git checkout --detach FETCH_HEAD
           git config --unset-all http.extraheader 2>/dev/null || true
 
+      - name: Set up Node 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
       - name: Startup
         run: |
           set -Eeuo pipefail
@@ -45,10 +51,10 @@ jobs:
           echo "STARTUP=PASS"
 
       - name: Install root Node dependencies
-        run: npm ci --ignore-scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Install bridge Node dependencies
-        run: npm --prefix node-bridge ci --ignore-scripts
+        run: npm --prefix node-bridge install --ignore-scripts --no-audit --no-fund
 
       - name: Install Python runtime dependencies
         run: python3 -m pip install --disable-pip-version-check -r requirements-runtime.txt
