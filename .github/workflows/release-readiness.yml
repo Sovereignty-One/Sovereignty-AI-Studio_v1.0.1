@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [Collaboration]
   push:
-    branches: [Collaboration]
+    branches: [Collaboration, codex/release-readiness]
   workflow_dispatch:
 
 concurrency:
