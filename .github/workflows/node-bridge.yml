@@ -13,7 +13,7 @@ jobs:
   test:
     name: Node Bridge tests
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 60 
     steps:
       - name: Checkout repository at exact commit
         env:
