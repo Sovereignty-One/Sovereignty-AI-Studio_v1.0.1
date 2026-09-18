@@ -2,9 +2,9 @@ name: Quart App CI
 
 on:
   push:
-    branches: [Collaboration, main, Claude, "GPT/Codex", ara-hardened, "copilot/main", duckAI, devassist420]
+    branches: [ "Collaboration, main, Claude, GPT/Codex, ara-hardened, copilot/main, duckAI, devassist420" ]
   pull_request:
-    branches: [Collaboration, main, Claude, "GPT/Codex", ara-hardened, "copilot/main", duckAI, devassist420]
+    branches: [ "Collaboration, main, Claude, GPT/Codex, ara-hardened, copilot/main, duckAI, devassist420" ]
   workflow_dispatch:
 
 permissions:
@@ -34,9 +34,9 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          if command -v python3.11 >/dev/null 2>&1; then
+          if command -v python3.13; then
             PYTHON_BIN="$(command -v python3.13)"
-          elif command -v python3 >/dev/null 2>&1; then
+          elif command -v python3; then
             PYTHON_BIN="$(command -v python3)"
           else
             echo "No supported Python interpreter is installed on the runner." >&2
