@@ -14,7 +14,7 @@
     {
       "id": "studio",
       "name": "Sovereignty-AI-Studio",
-      "remote": "https://github.com/Appel420/Sovereignty-AI-Studio.git",
+      "remote": "https://github.com/Sovereignty-One/Sovereignty-AI-Studio_v1.0.1.git",
       "relative_path": "Sovereignty-AI-Studio",
       "role": "integration-host",
       "required": true
