@@ -71,6 +71,10 @@ def main() -> int:
     if token:
         try:
             rs = api(f"/repos/{REPO}/rulesets", token)
+            if not isinstance(rs, list):
+                raise ValueError("GitHub rulesets response must be a list")
+            if any(not isinstance(r, dict) for r in rs):
+                raise ValueError("GitHub rulesets response contains a non-object entry")
             matches = [r for r in rs if r.get("name", "").casefold() == RULESET.casefold()]
             remote = {"checked": True, "matches": [api(f"/repos/{REPO}/rulesets/{r['id']}", token) for r in matches]}
         except (urllib.error.URLError, urllib.error.HTTPError, OSError, TimeoutError) as e:
