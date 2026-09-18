@@ -9,7 +9,7 @@ permissions:
 jobs:
   scar-evidence:
     name: SCAR evidence
-    runs-on: [self-hosted, linux, arm64]
+    runs-on: [self-hosted,macos, arm64]
     steps:
       - name: Checkout without external action
         env:
