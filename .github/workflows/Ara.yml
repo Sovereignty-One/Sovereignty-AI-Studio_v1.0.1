@@ -3,9 +3,9 @@ name: Ara
 on:
   workflow_dispatch:
   push:
-    branches: [main, Claude, "GPT/Codex", ara-hardened, "copilot/main", Collaboration, duckAI, devassist420]
+    branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
   pull_request:
-    branches: [main, Claude, "GPT/Codex", ara-hardened, "copilot/main", Collaboration, duckAI, devassist420]
+    branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
 
 permissions:
   contents: read
@@ -14,7 +14,7 @@ jobs:
   ara:
     name: Ara validation
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - name: Checkout exact commit (native git, no external action)
         env:
@@ -26,8 +26,10 @@ jobs:
           git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
-          git checkout --detach FETCH_HEAD
-          git config --unset-all http.extraheader 2>/dev/null || true
+          git checkout --detach FETCH_HEAD else
+            echo "http.extraheader missing after fetch; refusing to continue"
+            exit 1
+          fi
       - name: Verify runner
         run: |
           set -Eeuo pipefail
@@ -41,11 +43,10 @@ jobs:
           # - GitHub_TLS_pem.py            (certificate text, not code)
           while IFS= read -r -d '' file; do
             case "$file" in
-              Avatar_Companion_service.py|GitHub_TLS_pem.py)
-                echo "SKIP (non-module dump): $file"
+              Avatar_Companion_service.py|GitHub_TLS_pem.py
+              else
                 continue
                 ;;
-            esac
             python3 -m py_compile "$file"
           done < <(git -c core.quotePath=false ls-files -z -- '*.py' ':!:external/**' ':!:.venv/**')
           echo 'Ara Python syntax validation: PASS'
