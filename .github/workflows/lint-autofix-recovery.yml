@@ -1,0 +1,25 @@
+name: Lint Autofix Recovery
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-autofix:
+    name: Lint autofix
+    runs-on: ['self-hosted, macos, arm64']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+      - name: Report workflow state
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "WORKFLOW_VISIBLE=true"
+          echo "WORKFLOW_FILE=.github/workflows/lint-autofix-recovery.yml"
+          echo "RUNNER=${RUNNER_NAME}/${RUNNER_OS}/${RUNNER_ARCH}"
+          uname -m

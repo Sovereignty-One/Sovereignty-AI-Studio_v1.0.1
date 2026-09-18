@@ -6,49 +6,33 @@ name: ara-hardened-unit-ci-local
 on:
   workflow_dispatch:
   push:
-    branches:
-      - ara-hardened
+    branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, Devassist420" ]
   pull_request:
-    branches:
-      - ara-hardened
-      - Collaboration
+    branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420" ]
 
 concurrency:
   group: ara-hardened-unit-ci-local-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 env:
   CI_NAME: ara-hardened-unit-ci-local
-  CI_MODE: local
-  SG_NETWORK_MODE: local
-  SG_LOCAL_ONLY: '1'
-  PIP_DISABLE_PIP_VERSION_CHECK: '1'
 
 jobs:
   light:
     name: Visible local coordination and accessibility checks
-    runs-on: ubuntu-latest
+    runs-on: ['self-hosted, macos, arm64']
     timeout-minutes: 15
     steps:
-      - name: Checkout repository without external actions
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-
-          git init .
-          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
-          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
-          git -c http.extraheader="AUTHORIZATION: basic ${auth}" \
-            fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
-          git checkout --detach FETCH_HEAD
-          git config --unset-all http.extraheader 2>/dev/null || true
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 1
 
       - name: Startup verification
+        shell: bash
         run: |
           set -Eeuo pipefail
           test "${GITHUB_ACTIONS}" = "true"
@@ -59,7 +43,6 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-
           python_bin="$(command -v python3.13 || command -v python3)"
           "${python_bin}" -m venv .venv
           echo "${GITHUB_WORKSPACE}/.venv/bin" >> "${GITHUB_PATH}"
@@ -71,6 +54,7 @@ jobs:
           python -m pip install --upgrade pip pytest
 
       - name: Coordination import check
+        shell: bash
         run: |
           set -Eeuo pipefail
           python - <<'PY'
