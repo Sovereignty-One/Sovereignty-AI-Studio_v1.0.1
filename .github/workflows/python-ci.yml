@@ -55,7 +55,7 @@ jobs:
           for directory in backend/coordination prototypes/accessibility; do
             [[ -e "${directory}" ]] && targets+=("${directory}")
           done
-          if (( ${#targets[@]} )); then ruff check "${targets[@]}"; else ruff check . || true; fi
+          if (( ${#targets[@]} )); then python3 -m ruff check "${targets[@]}"; else python3 -m ruff check . || true; fi
 
       - name: Run tests
         env:
