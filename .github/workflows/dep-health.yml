@@ -3,7 +3,7 @@ on:
   push:
     branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
   pull_request:
-    branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420" ]
+    branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
   workflow_dispatch:
 
 env:
