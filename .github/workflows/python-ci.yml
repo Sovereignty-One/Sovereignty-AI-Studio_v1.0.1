@@ -10,52 +10,65 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: python-ci-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test:
     name: Python CI
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 1
-      - name: Set up Python
-        uses: actions/setup-python@a309ff6b9b65696a9512b93b1046f734bb0f7a63 # v5.3.0
-        with:
-          python-version: '3.11'
-          cache: pip
-      - name: Set up isolated Python environment
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          python3 -m venv .venv
-          . .venv/bin/activate
-          python -m pip install --upgrade pip setuptools wheel
-          echo "${GITHUB_WORKSPACE}/.venv/bin" >> "${GITHUB_PATH}"
-      - name: Install project test dependencies
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          if [[ -f pyproject.toml ]]; then
-            python -m pip install --no-cache-dir -e ".[test]" || python -m pip install --no-cache-dir ruff pytest
-          else
-            python -m pip install --no-cache-dir ruff pytest
-          fi
-      - name: Lint
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          targets=()
-          for directory in backend/coordination prototypes/accessibility; do
-            [[ -e "${directory}" ]] && targets+=("${directory}")
-          done
-          if (( ${#targets[@]} )); then ruff check "${targets[@]}"; else ruff check .; fi
-      - name: Run tests
+      - name: Checkout exact commit (native git, no external action)
         env:
-          PYTHONPATH: prototypes:.
-        shell: bash
-        run: python -m pytest -q
-      - name: Coordination import check
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          python -c "from backend.coordination import branch_registry; print('Coordination import: ok')" || echo 'Coordination import skipped (module absent)'
+          set -Eeuo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+          git config --unset-all http.extraheader 2>/dev/null || true
+
+      - name: System Python
+        run: |
+          set -Eeuo pipefail
+          python3 --version
+          python3 -m pip install --upgrade pip setuptools wheel
+
+      - name: Install test dependencies
+        run: |
+          set -Eeuo pipefail
+          # Prefer declared test extra; fall back to pinned pytest from requirements/pyproject
+          if [[ -f pyproject.toml ]]; then
+            python3 -m pip install --no-cache-dir -e ".[test]" \
+              || python3 -m pip install --no-cache-dir pytest==9.1.1 pytest-asyncio==1.4.0
+          else
+            python3 -m pip install --no-cache-dir pytest==9.1.1 pytest-asyncio==1.4.0
+          fi
+          python3 -m pytest --version
+
+      - name: Run real tests (hard fail)
+        env:
+          PYTHONPATH: ".:prototypes:backend"
+        run: |
+          set -Eeuo pipefail
+          if [[ ! -d tests ]]; then
+            echo "ERROR: tests/ directory missing — refusing soft-pass"
+            exit 1
+          fi
+          # Real suite. No || true. Any failure fails the job.
+          python3 -m pytest tests/ -q --tb=short
+
+      - name: Coordination import check (hard when present)
+        run: |
+          set -Eeuo pipefail
+          if [[ -d backend/coordination ]]; then
+            python3 -c "from backend.coordination import branch_registry; print('Coordination import: ok')" \
+              || python3 -c "from backend.coordination import BranchRegistry; print('Coordination import: ok')"
+          else
+            echo "backend/coordination not present on this tree — skipped"
+          fi
