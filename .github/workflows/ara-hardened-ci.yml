@@ -7,7 +7,6 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
       - Claude
       - "GPT/Codex"
       - ara-hardened
@@ -17,7 +16,6 @@ on:
       - Devassist420
   pull_request:
     branches:
-      - main
       - Claude
       - "GPT/Codex"
       - ara-hardened
@@ -39,7 +37,7 @@ env:
 jobs:
   light:
     name: Visible local coordination and accessibility checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
       - name: Checkout exact commit (native git, no external action)
