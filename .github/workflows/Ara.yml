@@ -36,12 +36,15 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          # Avatar_Companion_service.py is a docs+concat dump (leading markdown,
-          # multiple from __future__) — not a single valid module. Exclude until split.
-          # All other tracked *.py must compile.
+          # Known non-modules misnamed as .py (docs dumps / PEM text):
+          # - Avatar_Companion_service.py  (markdown + concat modules)
+          # - GitHub_TLS_pem.py            (certificate text, not code)
           while IFS= read -r -d '' file; do
             case "$file" in
-              Avatar_Companion_service.py) echo "SKIP (docs/concat dump): $file"; continue ;;
+              Avatar_Companion_service.py|GitHub_TLS_pem.py)
+                echo "SKIP (non-module dump): $file"
+                continue
+                ;;
             esac
             python3 -m py_compile "$file"
           done < <(git -c core.quotePath=false ls-files -z -- '*.py' ':!:external/**' ':!:.venv/**')

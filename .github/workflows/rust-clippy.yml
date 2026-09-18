@@ -16,7 +16,7 @@ jobs:
   rust-clippy:
     name: rust-clippy (first-party)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout exact commit (native git, no external action)
         env:
@@ -31,60 +31,45 @@ jobs:
           git checkout --detach FETCH_HEAD
           git config --unset-all http.extraheader 2>/dev/null || true
 
-      - name: Locate Cargo projects
-        id: cargo
+      - name: Install Rust toolchain
         shell: bash
         run: |
           set -Eeuo pipefail
-          mapfile -t manifests < <(git -c core.quotePath=false ls-files '**/Cargo.toml' 'Cargo.toml' || true)
-          if (( ${#manifests[@]} == 0 )); then
-            echo "found=false" >> "$GITHUB_OUTPUT"
-            echo "No Cargo.toml in tree"
-          else
-            echo "found=true" >> "$GITHUB_OUTPUT"
-            printf '%s\n' "${manifests[@]}"
-            echo "manifests<<EOF" >> "$GITHUB_OUTPUT"
-            printf '%s\n' "${manifests[@]}" >> "$GITHUB_OUTPUT"
-            echo "EOF" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Install Rust toolchain (system apt/rustup if available)
-        if: steps.cargo.outputs.found == 'true'
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          if command -v rustc >/dev/null 2>&1; then
-            rustc --version
-          else
+          if ! command -v rustc >/dev/null 2>&1; then
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal -c clippy
-            # shellcheck disable=SC1091
-            source "$HOME/.cargo/env"
-            rustc --version
-            cargo --version
           fi
-          rustup component add clippy || true
+          # shellcheck disable=SC1091
+          source "$HOME/.cargo/env"
+          rustup component add clippy
+          rustc --version
+          cargo --version
 
-      - name: Run cargo clippy (hard fail)
-        if: steps.cargo.outputs.found == 'true'
+      - name: Run cargo clippy on first-party crates only
         shell: bash
         run: |
           set -Eeuo pipefail
           # shellcheck disable=SC1091
-          [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
-          failed=0
-          while IFS= read -r manifest; do
-            [[ -z "$manifest" ]] && continue
-            dir=$(dirname "$manifest")
-            echo "=== clippy in $dir ==="
-            (cd "$dir" && cargo clippy --all-targets -- -D warnings) || failed=1
-          done <<< "${{ steps.cargo.outputs.manifests }}"
-          exit "$failed"
+          source "$HOME/.cargo/env"
 
-      - name: No Rust project
-        if: steps.cargo.outputs.found != 'true'
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          echo "RESULT: no Cargo.toml — rust-clippy has nothing to analyze"
-          echo "Previously this workflow used blocked actions and failed silently"
-          exit 1
+          # First-party only — skip external/, resources/configs stubs, workspace orphans
+          crates=()
+          for c in phase0 diamond-core crates/orchestrator crates/policy-engine crates/principal; do
+            if [[ -f "$c/Cargo.toml" ]]; then
+              crates+=("$c")
+            fi
+          done
+
+          if (( ${#crates[@]} == 0 )); then
+            echo "RESULT: no first-party Cargo.toml found"
+            exit 1
+          fi
+
+          failed=0
+          for dir in "${crates[@]}"; do
+            echo "=== clippy in $dir ==="
+            if ! (cd "$dir" && cargo clippy --all-targets -- -D warnings); then
+              echo "FAILED: $dir"
+              failed=1
+            fi
+          done
+          exit "$failed"

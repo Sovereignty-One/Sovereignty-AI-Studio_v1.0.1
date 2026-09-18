@@ -90,6 +90,13 @@ pub struct AuthorizationEngine {
     grants: HashMap<String, Grant>,
     resources: HashMap<String, String>,
 }
+
+impl Default for AuthorizationEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AuthorizationEngine {
     pub fn new() -> Self { Self { identities: HashMap::new(), grants: HashMap::new(), resources: HashMap::new() } }
     pub fn add_identity(&mut self, identity: Identity) -> Result<(), &'static str> {
