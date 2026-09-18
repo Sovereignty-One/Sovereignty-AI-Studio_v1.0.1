@@ -26,7 +26,12 @@ jobs:
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
           git checkout --detach FETCH_HEAD
-          git config --unset-all http.extraheader 2>/dev/null || true
+          if git config --get http.extraheader >/dev/null; then
+            git config --unset-all http.extraheader
+          else
+            echo "http.extraheader missing after fetch; refusing to continue"
+            exit 1
+          fi
       - name: Set up Node.js
         run: node --version
       - name: Install dependencies
