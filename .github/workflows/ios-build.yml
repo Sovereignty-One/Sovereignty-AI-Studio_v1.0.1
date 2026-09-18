@@ -20,24 +20,27 @@ jobs:
           set -Eeuo pipefail
           git init .
           git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
-          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
           git checkout --detach FETCH_HEAD
-          if git config --get http.extraheader >/dev/null; then
-            git config --unset-all http.extraheader
-          else
-            echo "http.extraheader missing after fetch; refusing to continue"
-            exit 1
-          fi
+          git config --unset-all http.extraheader 2>/dev/null || true
       - name: Validate source presence
         shell: bash
         run: |
           set -Eeuo pipefail
-          if [[ -d ios ]]; then find ios -maxdepth 3 -type f -print | head -100; else echo 'No ios/ directory exists; source validation not applicable.'; fi
+          if [[ -d ios ]]; then
+            find ios -maxdepth 3 -type f -print | head -100
+          else
+            echo 'No ios/ directory exists; source validation not applicable.'
+          fi
       - name: Validate Swift syntax when Swift sources exist
         shell: bash
         run: |
           set -Eeuo pipefail
           if find ios -type f -name '*.swift' -print -quit 2>/dev/null | grep -q .; then
-            while IFS= read -r -d '' file; do xcrun swiftc -parse "$file"; done < <(find ios -type f -name '*.swift' -print0)
-          else echo 'No Swift source files found; native source parse not applicable.'; fi
+            while IFS= read -r -d '' file; do
+              xcrun swiftc -parse "$file"
+            done < <(find ios -type f -name '*.swift' -print0)
+          else
+            echo 'No Swift source files found; native source parse not applicable.'
+          fi

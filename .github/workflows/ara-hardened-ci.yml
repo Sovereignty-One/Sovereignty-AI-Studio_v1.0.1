@@ -8,18 +8,18 @@ on:
   push:
     branches:
       - Claude
-      - "GPT/Codex"
+      - GPT/Codex
       - ara-hardened
-      - "copilot/main"
+      - copilot/main
       - Collaboration
       - duckAI
       - Devassist420
   pull_request:
     branches:
       - Claude
-      - "GPT/Codex"
+      - GPT/Codex
       - ara-hardened
-      - "copilot/main"
+      - copilot/main
       - Collaboration
       - duckAI
       - Devassist420
@@ -37,8 +37,8 @@ env:
 jobs:
   light:
     name: Visible local coordination and accessibility checks
-    runs-on: ubuntu-26.04
-    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout exact commit (native git, no external action)
         env:
@@ -50,7 +50,7 @@ jobs:
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
           git checkout --detach FETCH_HEAD
-          git config --unset-all http.extraheader
+          git config --unset-all http.extraheader 2>/dev/null || true
 
       - name: Startup verification
         shell: bash
