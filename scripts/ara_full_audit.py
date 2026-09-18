@@ -14,8 +14,8 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-REPO = os.environ.get("GITHUB_REPOSITORY", "Appel420/Sovereignty-AI-Studio")
+ROOT = Path(__file__).resolve().parents(1)
+REPO = os.environ.get("GITHUB_REPOSITORY", "Sovereignty-One/Sovereignty-AI-Studio_v1.0.1")
 BRANCH = os.environ.get("ARA_CANONICAL_BRANCH", "Collaboration")
 RULESET = os.environ.get("ARA_RULESET_NAME", "Ara")
 REPORT = ROOT / "automation/reports/ara_full_audit.json"
