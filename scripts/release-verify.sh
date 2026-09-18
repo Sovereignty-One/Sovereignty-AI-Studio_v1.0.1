@@ -29,7 +29,11 @@ pass "node syntax"
 
 tmp_compile_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_compile_dir"' EXIT
-python3 -m compileall -q -d "$tmp_compile_dir" --exclude external --exclude .venv . || fail "python compilation failed"
+while IFS= read -r -d '' pyfile; do
+  PYTHONPYCACHEPREFIX="$tmp_compile_dir" python3 -m py_compile "$pyfile"     || fail "python compilation failed: $pyfile"
+done < <(
+  find . -type f -name '*.py'     -not -path './external/*'     -not -path './.venv/*'     -not -path './node_modules/*'     -print0
+)
 pass "python compilation"
 python3 scripts/validate-runtime-coherence.py || fail "runtime coherence validation failed"
 pass "runtime coherence"
