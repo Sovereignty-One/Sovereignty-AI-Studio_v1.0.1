@@ -19,15 +19,18 @@ for f in START_SERVER.sh INSTALL.sh bridge.py node-bridge/server.js package.json
 done
 pass "release entrypoints and lockfiles exist"
 
-bash -n START_SERVER.sh INSTALL.sh scripts/local-ci.sh || fail "shell syntax validation failed"
+for script in START_SERVER.sh INSTALL.sh scripts/local-ci.sh; do
+  bash -n "$script" || fail "shell syntax validation failed: $script"
+done
 pass "shell syntax"
 
 node --check node-bridge/server.js || fail "node bridge syntax validation failed"
 pass "node syntax"
 
-python3 -m compileall -q --exclude external --exclude .venv . || fail "python compilation failed"
+tmp_compile_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_compile_dir"' EXIT
+python3 -m compileall -q -d "$tmp_compile_dir" --exclude external --exclude .venv . || fail "python compilation failed"
 pass "python compilation"
-
 python3 scripts/validate-runtime-coherence.py || fail "runtime coherence validation failed"
 pass "runtime coherence"
 
@@ -38,7 +41,7 @@ bash scripts/local-ci.sh || fail "repository local CI failed"
 pass "repository local CI"
 
 # The release artifact must never contain local state, credentials, build caches, or VCS metadata.
-for forbidden in .git .venv node_modules .sg_master_key .env; do
+for forbidden in .git .venv node_modules .sg_master_key .env __pycache__; do
   if find . -path "./$forbidden" -o -name "$forbidden" | grep -q .; then
     case "$forbidden" in
       .git|.venv|node_modules) : ;;
@@ -46,6 +49,9 @@ for forbidden in .git .venv node_modules .sg_master_key .env; do
     esac
   fi
 done
+if find . -type f -name '*.pyc' -print -quit | grep -q .; then
+  fail "compiled Python bytecode present in repository tree"
+fi
 pass "release exclusion policy"
 
 echo "RELEASE CHECK: COMPLETE"
