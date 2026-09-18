@@ -36,11 +36,12 @@ assert.ok(runtimeSources[2].includes('SGHv119Runtime'), 'SGHv119 bootstrap imple
 // Validate the canonical modules here; do not fail the primary CI lane on
 // legacy inline dashboard ownership while the surgical migration is in flight.
 const dashboardRefs = runtimeFiles.filter((relativePath) => source.includes(relativePath));
-if (dashboardRefs.length !== runtimeFiles.length) {
-  console.warn(
-    'Dashboard wiring migration pending: canonical runtime modules are present, '
-    + 'but not all script tags are embedded in SGHv119.html yet.'
-  );
-}
+assert.strictEqual(
+  dashboardRefs.length,
+  runtimeFiles.length,
+  `SGHv119.html is missing canonical runtime script references: ${runtimeFiles
+    .filter((relativePath) => !source.includes(relativePath))
+    .join(', ')}`
+);
 
 console.log('SGHv119 canonical runtime ownership checks passed');
