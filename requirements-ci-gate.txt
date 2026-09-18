@@ -1,0 +1,5 @@
+# Minimal pinned dependencies required by the release readiness gate and local CI smoke tests.
+cryptography==50.0.1
+pytest==9.1.1
+pytest-asyncio==1.4.0
+websockets==16.1.1
