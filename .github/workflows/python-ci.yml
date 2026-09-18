@@ -1,31 +1,31 @@
 name: Python CI
 
 on:
-  workflow_dispatch:
   push:
-    branches: [Collaboration]
+    branches: [Collaboration, main, Claude, "GPT/Codex", ara-hardened, "copilot/main", duckAI, devassist420]
   pull_request:
-    branches: [Collaboration]
+    branches: [Collaboration, main, Claude, "GPT/Codex", ara-hardened, "copilot/main", duckAI, devassist420]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: python-ci-${{ github.ref }}
   cancel-in-progress: false
 
-permissions:
-  contents: read
-
 jobs:
- test: 
-    runs-on: macos-latest
-    timeout-minutes: 10
+  test:
+    name: Python CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: Checkout exact commit without external actions
+      - name: Checkout exact commit (native git, no external action)
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -Eeuo pipefail
-          : "${GH_TOKEN:?GITHUB_TOKEN is required}"
           git init .
           git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
@@ -33,49 +33,42 @@ jobs:
           git checkout --detach FETCH_HEAD
           git config --unset-all http.extraheader 2>/dev/null || true
 
-      - name: Set up Python (system)
+      - name: System Python
         run: |
           set -Eeuo pipefail
           python3 --version
-          python3 -m pip install --upgrade pip
-          - name: Lint (advisory — does not fail the job)
-        continue-on-error: false
-      - name: run backend
+          python3 -m pip install --upgrade pip setuptools wheel
+
+      - name: Install test dependencies
         run: |
           set -Eeuo pipefail
-          ruff check backend/accessibility || ruff check . || true
-          echo "Ruff completed (advisory)"
+          # Prefer declared test extra; fall back to pinned pytest from requirements/pyproject
+          if [[ -f pyproject.toml ]]; then
+            python3 -m pip install --no-cache-dir -e ".[test]" \
+              || python3 -m pip install --no-cache-dir pytest==9.1.1 pytest-asyncio==1.4.0
+          else
+            python3 -m pip install --no-cache-dir pytest==9.1.1 pytest-asyncio==1.4.0
+          fi
+          python3 -m pytest --version
 
-      - name: Run focused tests
+      - name: Run real tests (hard fail)
         env:
-          PYTHONPATH: prototypes:.
+          PYTHONPATH: ".:prototypes:backend"
         run: |
           set -Eeuo pipefail
-          pytest -q prototypes/accessibility/tests/test_accessibility_control.py || pytest -q || true
+          if [[ ! -d tests ]]; then
+            echo "ERROR: tests/ directory missing — refusing soft-pass"
+            exit 1
+          fi
+          # Real suite. No || true. Any failure fails the job.
+          python3 -m pytest tests/ -q --tb=short
 
-      - name: Coordination import check
+      - name: Coordination import check (hard when present)
         run: |
           set -Eeuo pipefail
-          python3 -c "from backend.coordination import BranchRegistry; print('ok')" || echo "Coordination module not present on this lane — skipped"
-
-      - name: Create CI manifest
-        run: |
-          set -Eeuo pipefail
-          python3 - <<'PY'
-          import hashlib, hmac, json, os
-          manifest = {
-              'workflow': 'Python CI',
-              'run_id': os.environ.get('GITHUB_RUN_ID', ''),
-              'sha': os.environ.get('GITHUB_SHA', ''),
-              'ref': os.environ.get('GITHUB_REF', ''),
-              'execution': 'github-hosted',
-              'device_independent': True,
-              'signing_backend': 'hmac-sha256-ci-local',
-          }
-          key = b'ci-manifest-local-verification'
-          message = json.dumps(manifest, sort_keys=True).encode()
-          manifest['signature'] = hmac.new(key, message, hashlib.sha256).hexdigest()
-          with open('python-ci-manifest.json', 'w', encoding='utf-8') as fh:
-              json.dump(manifest, fh, indent=2)
-          print('CI manifest written')
-          PY
+          if [[ -d backend/coordination ]]; then
+            python3 -c "from backend.coordination import branch_registry; print('Coordination import: ok')" \
+              || python3 -c "from backend.coordination import BranchRegistry; print('Coordination import: ok')"
+          else
+            echo "backend/coordination not present on this tree — skipped"
+          fi
