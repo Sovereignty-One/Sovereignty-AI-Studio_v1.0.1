@@ -33,6 +33,7 @@ jobs:
       - name: Checkout without external action
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
           set -Eeuo pipefail
           git init .
@@ -40,7 +41,7 @@ jobs:
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
           git checkout --detach FETCH_HEAD
-          git config --unset-all http.extraheader 2>/dev-null || true
+          git config --unset-all http.extraheader 2>/dev/null || true
       - name: Verify workflow inventory
         shell: bash
         run: |
@@ -55,10 +56,11 @@ jobs:
         run: |
           set -Eeuo pipefail
           for workflow in ci.yml ci-sovereign.yml python-ci.yml Quart.yml; do
-            if grep -Eq 'runs-on: \[macos-latest' ".github/workflows/$workflow"; then
-              echo " contract present in $workflow"
+            if grep -Eq 'runs-on:' ".github/workflows/$workflow"; then
+              echo "runs-on contract present in $workflow"
             else
-              echo "explicit macos-latest runs-on in $workflow"
+              echo "missing runs-on in $workflow"
+              exit 1
             fi
           done
           echo 'RUNNER_CONTRACTS=PASS'
