@@ -102,7 +102,6 @@ def test_main_rejects_unscoped_always_bypass(
     """An always-on bypass without an actor scope must be treated as critical."""
     (audit_workspace / "README.md").write_text("clean\n", encoding="utf-8")
     monkeypatch.setenv("GITHUB_TOKEN", "test-token")
-    monkeypatch.setattr(ara_full_audit, "REPO", "Appel420/Sovereignty-AI-Studio")
     monkeypatch.setattr(ara_full_audit, "git", lambda *args: "")
 
     ruleset = {
