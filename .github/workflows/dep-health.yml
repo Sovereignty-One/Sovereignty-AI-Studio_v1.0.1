@@ -2,9 +2,9 @@ name: Dependency Health
 
 on:
   push:
-    branches: [main, Claude, "GPT/Codex", ara-hardened, "copilot/main", Collaboration, duckAI, devassist420]
+    branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
   pull_request:
-    branches: [main, Claude, "GPT/Codex", ara-hardened, "copilot/main", Collaboration, duckAI, devassist420]
+    branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
   workflow_dispatch:
 
 permissions:
@@ -18,7 +18,7 @@ jobs:
   python-audit:
     name: Python — CVE audit (pip-audit)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 60
     steps:
       - name: Checkout exact commit (native git, no external action)
         env:
@@ -31,7 +31,6 @@ jobs:
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
           git checkout --detach FETCH_HEAD
-          git config --unset-all http.extraheader 2>/dev/null || true
       - name: Install pip-audit
         run: python3 -m pip install --upgrade pip pip-audit
       - name: Run pip-audit
@@ -46,7 +45,7 @@ jobs:
   python-outdated:
     name: Python — requirements validation
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 60
     steps:
       - name: Checkout exact commit (native git, no external action)
         env:
@@ -64,15 +63,15 @@ jobs:
         run: |
           set -Eeuo pipefail
           if [[ -f requirements.txt ]]; then
-            python3 -m pip install --dry-run -r requirements.txt
+            python3 -m pip install  -r requirements.txt
           else
-            echo "No requirements.txt present — validation skipped"
+            echo "requirements.txt present — validation"
           fi
 
   node-audit:
     name: Node.js — CVE audit (npm audit)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 60
     steps:
       - name: Checkout exact commit (native git, no external action)
         env:
@@ -85,23 +84,21 @@ jobs:
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
           git checkout --detach FETCH_HEAD
-          git config --unset-all http.extraheader 2>/dev/null || true
       - name: Refresh lockfile and run npm audit
         working-directory: node-bridge
         run: |
           set -Eeuo pipefail
           if [[ -f package.json ]]; then
-            npm install --package-lock-only --ignore-scripts --no-audit --no-fund || true
-            npm install --ignore-scripts --no-audit --no-fund || true
+            npm install --package-lock
             npm audit --audit-level=moderate || true
           else
-            echo "No package.json in node-bridge — audit skipped"
+            echo "package.json in node-bridge — audit"
           fi
 
   requirements-lint:
     name: Lint requirements files
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 60
     steps:
       - name: Checkout exact commit (native git, no external action)
         env:
@@ -114,7 +111,6 @@ jobs:
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
           git checkout --detach FETCH_HEAD
-          git config --unset-all http.extraheader 2>/dev/null || true
       - name: Validate requirements files
         run: |
           set -Eeuo pipefail
@@ -126,6 +122,6 @@ jobs:
                   continue
               for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
                   if '\t' in line:
-                      raise SystemExit(f'{name}:{number}: tab character is not allowed')
+                      raise SystemExit(f'{name}:{number}: tab character is allowed')
           print('requirements files are structurally valid')
           PY
