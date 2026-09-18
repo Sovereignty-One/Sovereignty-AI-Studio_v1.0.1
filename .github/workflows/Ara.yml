@@ -2,19 +2,24 @@ name: Ara
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main, Claude, "GPT/Codex", ara-hardened, "copilot/main", Collaboration, duckAI, devassist420]
+  pull_request:
+    branches: [main, Claude, "GPT/Codex", ara-hardened, "copilot/main", Collaboration, duckAI, devassist420]
 
 permissions:
   contents: read
 
 jobs:
   ara:
-    name: Ara validation (manual)
+    name: Ara validation
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout without external action
+      - name: Checkout exact commit (native git, no external action)
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
           set -Eeuo pipefail
           git init .
@@ -24,7 +29,9 @@ jobs:
           git checkout --detach FETCH_HEAD
           git config --unset-all http.extraheader 2>/dev/null || true
       - name: Verify runner
-        run: test "${RUNNER_OS}" = "Linux"
+        run: |
+          set -Eeuo pipefail
+          test "${RUNNER_OS}" = "Linux"
       - name: Validate first-party Python syntax
         shell: bash
         run: |
