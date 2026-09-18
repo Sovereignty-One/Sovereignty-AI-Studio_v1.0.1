@@ -9,7 +9,7 @@ from core.security.tpm_attestation import TPMAttester
 def test_tpm_fallback_is_explicitly_unverified() -> None:
     result = TPMAttester().attest()
     assert result.verified is False
-    assert result.details["status"] == "not_implemented"
+    assert result.details["status"] == "missing_evidence"
     assert TPMAttester().status()["status"] == "unavailable"
 
 

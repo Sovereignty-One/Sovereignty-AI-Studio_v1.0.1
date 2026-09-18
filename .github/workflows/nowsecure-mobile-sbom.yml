@@ -1,55 +1,74 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-#
-# NowSecure: The Mobile Security Experts <https://www.nowsecure.com/>.
-#
-# To use this workflow, you must have a token for NowSecure Platform. If you are a NowSecure customer,
-# you can find it in NowSecure Platform.
-#
-# If you *are not* a NowSecure customer, click here to sign up for a free trial to get access:
-# <https://bit.ly/ns-git-sbom>.
-#
-# Instructions:
-#
-# 1. In the settings for your repository, click "Secrets" then "New repository secret". Name the secret "NS_TOKEN" and
-#    paste in your Platform token. If you do not have a Platform token, or wish to create a new one for GitHub, visit
-#    NowSecure Platform and go to "Profile & Preferences" then create a token labelled "GitHub".
-#
-# 2. Follow the annotated workflow below and make any necessary modifications then save the workflow to your repository
-#    and review the "Dependency graph" tab in the "Insights" pane once the action has run.
+name: NowSecure Mobile SBOM
 
-name: "NowSecure Mobile SBOM"
+# Commercial NowSecure SBOM requires:
+#   - org-approved nowsecure/* actions (currently blocked by policy)
+#   - secrets.NS_TOKEN
+#   - a built .ipa / .apk artifact
+#   - a real Platform group_id (not the template placeholder)
+# Until those exist, this workflow is manual-only and reports the gap.
 
 on:
-  push:
-    branches: [ "Collaboration" ]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ "Collaboration" ]
-  schedule:
-    - cron: '15 11 * * 4'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  nowsecure:
-    name: NowSecure Mobile SBOM
+  sbom-readiness:
+    name: Mobile SBOM readiness (first-party)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    timeout-minutes: 5
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout exact commit (native git, no external action)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+          git config --unset-all http.extraheader 2>/dev/null || true
 
-      - name: Build your application
-        run: ./gradlew assembleDebug              # Update this to build your Android or iOS application
+      - name: Report SBOM prerequisites (hard facts, no fake pass)
+        env:
+          NS_TOKEN: ${{ secrets.NS_TOKEN }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "=== Mobile SBOM readiness ==="
+          missing=0
 
-      - name: NowSecure upload app
-        uses: nowsecure/nowsecure-sbom-action@ecb731b6f17a83fa53f756f9dae2ec7034c5ed7c
-        with:
-          token: ${{ secrets.NS_TOKEN }}
-          app_file: app-debug.apk                 # Update this to a path to your .ipa or .apk
-          group_id: {{ groupId }}                 # Update this to your desired Platform group ID
+          if [[ -z "${NS_TOKEN:-}" ]]; then
+            echo "FAIL: secrets.NS_TOKEN is not set"
+            missing=1
+          else
+            echo "OK: secrets.NS_TOKEN is present"
+          fi
+
+          if [[ -f gradlew ]] || [[ -d android ]] || [[ -d app ]]; then
+            echo "OK: Android/gradle tree detected"
+          else
+            echo "FAIL: no Android/gradle project (no gradlew / android / app)"
+            missing=1
+          fi
+
+          if find . -name '*.ipa' -o -name '*.apk' 2>/dev/null | grep -q .; then
+            echo "OK: built mobile artifact present"
+            find . -name '*.ipa' -o -name '*.apk' 2>/dev/null | head -20
+          else
+            echo "FAIL: no .ipa/.apk artifact in tree"
+            missing=1
+          fi
+
+          echo "POLICY: nowsecure/* actions are third-party and blocked by org action policy"
+          echo "        until approved under Sovereignty-One ownership, commercial upload is disabled"
+
+          if [[ "$missing" -ne 0 ]]; then
+            echo "RESULT: Mobile SBOM is not runnable — prerequisites missing"
+            exit 1
+          fi
+          echo "RESULT: prerequisites met; commercial NowSecure step still requires policy-approved action"
+          exit 1

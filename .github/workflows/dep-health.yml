@@ -2,9 +2,9 @@ name: Dependency Health
  
 on:
   push:
-    branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
+    branches: [main, Claude, "GPT/Codex", ara-hardened, "copilot/main", Collaboration, duckAI, devassist420]
   pull_request:
-    branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
+    branches: [main, Claude, "GPT/Codex", ara-hardened, "copilot/main", Collaboration, duckAI, devassist420]
   workflow_dispatch:
 
 env:
@@ -19,11 +19,9 @@ concurrency:
 
 jobs:
   python-audit:
-    name: Python — CVE audit
-    runs-on:
-      - self-hosted
-      - Linux
-      - arm64
+    name: Python — CVE audit (pip-audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout without external action
         shell: bash
@@ -49,10 +47,8 @@ jobs:
 
   python-outdated:
     name: Python — requirements validation
-    runs-on:
-      - self-hosted
-      - Linux
-      - arm64
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout without external action
         shell: bash
@@ -75,11 +71,9 @@ jobs:
           fi
 
   node-audit:
-    name: Node.js — CVE audit
-    runs-on:
-      - self-hosted
-      - Linux
-      - arm64
+    name: Node.js — CVE audit (npm audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout without external action
         shell: bash
@@ -104,10 +98,8 @@ jobs:
 
   requirements-lint:
     name: Lint requirements files
-    runs-on:
-      - self-hosted
-      - Linux
-      - arm64
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout without external action
         shell: bash
