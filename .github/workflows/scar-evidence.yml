@@ -9,7 +9,7 @@ permissions:
 jobs:
   scar-evidence:
     name: SCAR evidence
-    runs-on: ununtu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout without external action
         env:
