@@ -15,7 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REPO = os.environ.get("GITHUB_REPOSITORY", "Appel420/Sovereignty-AI-Studio")
+REPO = os.environ.get("GITHUB_REPOSITORY", "Sovereignty-One/Sovereignty-AI-Studio_v1.0.1")
 BRANCH = os.environ.get("ARA_CANONICAL_BRANCH", "Collaboration")
 RULESET = os.environ.get("ARA_RULESET_NAME", "Ara")
 REPORT = ROOT / "automation/reports/ara_full_audit.json"
@@ -79,7 +79,7 @@ def main() -> int:
     if nested: findings.append({"severity": "HIGH", "code": "NESTED_REPOSITORY"})
     if snapshots: findings.append({"severity": "HIGH", "code": "NESTED_STUDIO_SNAPSHOT"})
     if templates: findings.append({"severity": "HIGH", "code": "CREDENTIAL_OR_TEMPLATE_RISK"})
-    if dupes: findings.append({"severity": "MEDIUM", "code": "DUPLICATE_CONTENT", "groups": len(dupes)})
+    if dupes: findings.append({"severity": "MEDIUM", "code": "DUPLICATE_CONTENT", "groups": len(dupes)
     if remote.get("checked"):
         matches = remote.get("matches", [])
         if not matches: findings.append({"severity": "CRITICAL", "code": "ARA_RULESET_MISSING"})
