@@ -34,7 +34,7 @@ jobs:
           git config --unset-all http.extraheader 2>/dev/null || true
 
       - name: Set up Node 24
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v5.0.0
         with:
           node-version: '24'
           package-manager-cache: false
@@ -54,10 +54,10 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Install bridge Node dependencies
-        run: npm --prefix node-bridge install --ignore-scripts --no-audit --no-fund
+        run: npm --prefix node-bridge ci --ignore-scripts --no-audit --no-fund
 
       - name: Install Python runtime dependencies
-        run: python3 -m pip install --disable-pip-version-check -r requirements-runtime.txt
+        run: python3 -m pip install --disable-pip-version-check --no-input -r requirements-ci-gate.txt
 
       - name: Run release gate
         run: bash scripts/release-verify.sh
