@@ -15,20 +15,36 @@ jobs:
     name: Flake8 recovery / visible execution
     runs-on: ['self-hosted, macos, arm64']
     steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 1
-      - name: Set up Python
-        uses: actions/setup-python@a309ff6b9b65696a9512b93b1046f734bb0f7a63 # v5.3.0
-        with:
-          python-version: '3.11'
-          cache: pip
+      - name: Checkout repository (native git; no external action)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          git init .
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote remove origin
+      - name: Select runner-provided Python
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if command -v python3.11 >/dev/null 2>&1; then
+            PYTHON_BIN="$(command -v python3.11)"
+          elif command -v python3 >/dev/null 2>&1; then
+            PYTHON_BIN="$(command -v python3)"
+          else
+            echo "No supported Python interpreter is installed on the runner." >&2
+            exit 1
+          fi
+          echo "PYTHON_BIN=${PYTHON_BIN}" >> "${GITHUB_ENV}"
+          "${PYTHON_BIN}" --version
       - name: Install flake8
         shell: bash
         run: |
           set -Eeuo pipefail
-          python -m pip install --upgrade pip flake8
+          ${PYTHON_BIN} -m pip install --upgrade pip flake8
       - name: Run flake8
         shell: bash
         run: |
