@@ -34,11 +34,7 @@ jobs:
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --depth=1 origin "${GITHUB_SHA}"
           git checkout --detach FETCH_HEAD
-          if
-          else
-            echo "http.extraheader missing after fetch; refusing to continue"
-            exit 1
-          fi
+          git config --unset-all http.extraheader 2>/dev/null || true
       - name: Startup
         run: |
           echo "event=${GITHUB_EVENT_NAME}"
