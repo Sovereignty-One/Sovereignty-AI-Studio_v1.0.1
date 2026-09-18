@@ -22,7 +22,7 @@ concurrency:
 jobs:
   contract:
     name: Diamond Core v0.1 Contract Gate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04-arm
     timeout-minutes: 30
     steps:
       - name: Checkout exact commit (native git, no external action)
@@ -37,6 +37,10 @@ jobs:
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
           git checkout --detach FETCH_HEAD
+          if ! git config --get http.extraheader; then
+            echo "http.extraheader missing after fetch; refusing to continue"
+            exit 1
+          fi
           git config --unset-all http.extraheader
 
       - name: Runner contract
