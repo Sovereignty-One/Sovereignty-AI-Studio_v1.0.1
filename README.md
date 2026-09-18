@@ -9,7 +9,7 @@ Sovereignty AI Studio is a self-hosted, offline-first AI control surface and sup
 
 ## Runtime governance
 
-The canonical runtime modes are **LOCAL**, **HYBRID**, and **ONLINE**. LOCAL is the default and device-offline/loopback-only. HYBRID and ONLINE require explicit deployment-owner authorization and must not be inferred from legacy names.
+The canonical runtime modes are **LOCAL**, **HYBRID**, and **ONLINE**. LOCAL is the default and is device-offline/loopback-only. HYBRID and ONLINE require explicit deployment-owner authorization and must not be inferred from legacy names.
 
 Runtime artifacts are classified as **canonical**, **derived**, or **external**. Canonical artifacts define the runtime contract; derived artifacts are generated or secondary representations; external artifacts require explicit authorization before execution or ingestion.
 
