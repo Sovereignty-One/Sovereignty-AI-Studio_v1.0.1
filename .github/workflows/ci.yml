@@ -18,7 +18,7 @@ jobs:
   test:
     name: Python CI (ubuntu-latest)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout exact commit (native git, no external action)
         env:
@@ -49,35 +49,34 @@ jobs:
           python3 --version
           python3 -m pip install --upgrade pip setuptools wheel
 
-      - name: Install lint and test tools
+      - name: Install test dependencies
         run: |
           set -Eeuo pipefail
-          python3 -m pip install --no-cache-dir ruff pytest
           if [[ -f pyproject.toml ]]; then
-            python3 -m pip install --no-cache-dir -e '.[test]' || true
+            python3 -m pip install --no-cache-dir -e ".[test]" \
+              || python3 -m pip install --no-cache-dir pytest==9.1.1 pytest-asyncio==1.4.0
+          else
+            python3 -m pip install --no-cache-dir pytest==9.1.1 pytest-asyncio==1.4.0
           fi
+          python3 -m pytest --version
 
-      - name: Lint (advisory)
-        continue-on-error: true
-        run: |
-          set -Eeuo pipefail
-          targets=()
-          for directory in backend/coordination prototypes/accessibility; do
-            [[ -e "${directory}" ]] && targets+=("${directory}")
-          done
-          # Use python3 -m ruff so PATH does not need the user bin directory
-          if (( ${#targets[@]} )); then python3 -m ruff check "${targets[@]}"; else python3 -m ruff check . || true; fi
-
-      - name: Run tests
+      - name: Run real tests (hard fail)
         env:
-          PYTHONPATH: prototypes:.
+          PYTHONPATH: ".:prototypes:backend"
         run: |
           set -Eeuo pipefail
-          python3 -m pytest -q || true
+          if [[ ! -d tests ]]; then
+            echo "ERROR: tests/ directory missing — refusing soft-pass"
+            exit 1
+          fi
+          python3 -m pytest tests/ -q --tb=short
 
-      - name: Coordination import check
+      - name: Coordination import check (hard when present)
         run: |
           set -Eeuo pipefail
-          python3 -c "from backend.coordination import branch_registry; print('Coordination import: ok')" \
-            || python3 -c "from backend.coordination import BranchRegistry; print('Coordination import: ok')" \
-            || echo "Coordination module not present — skipped"
+          if [[ -d backend/coordination ]]; then
+            python3 -c "from backend.coordination import branch_registry; print('Coordination import: ok')" \
+              || python3 -c "from backend.coordination import BranchRegistry; print('Coordination import: ok')"
+          else
+            echo "backend/coordination not present on this tree — skipped"
+          fi
