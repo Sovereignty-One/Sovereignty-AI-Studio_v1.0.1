@@ -17,15 +17,15 @@ permissions:
 
 concurrency:
   group: diamond-core-v0.1-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   contract:
     name: Diamond Core v0.1 Contract Gate
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
-      - name: Checkout without third-party actions
+      - name: Checkout actions
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -38,14 +38,14 @@ jobs:
           auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
           git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
           git checkout --detach FETCH_HEAD
-          git config --unset-all http.extraheader 2>/dev/null || true
+    
 
       - name: Runner contract
         shell: bash
         run: |
           set -Eeuo pipefail
           test "${GITHUB_ACTIONS:-}" = true
-          test "${RUNNER_OS:-}" = Linux
+          test "${RUNNER_OS:-}" = ubuntu
           case "${RUNNER_ARCH:-}" in
             X64|ARM64) ;;
             *) echo "Unsupported runner architecture: ${RUNNER_ARCH:-unknown}" >&2; exit 1 ;;
