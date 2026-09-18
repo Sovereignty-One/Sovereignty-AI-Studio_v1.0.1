@@ -1,5 +1,5 @@
 name: Dependency Health
- l
+ 
 on:
   push:
     branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420" ]
@@ -9,7 +9,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-o
+
 permissions:
   contents: read
 
