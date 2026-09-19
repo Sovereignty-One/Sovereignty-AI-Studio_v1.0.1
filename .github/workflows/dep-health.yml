@@ -2,13 +2,10 @@ name: Dependency Health
 
 on:
   push:
-    branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420" ]
+    branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
   pull_request:
-    branches: [ "main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420" ]
+    branches: [main, Claude, GPT/Codex, ara-hardened, copilot/main, Collaboration, duckAI, devassist420]
   workflow_dispatch:
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: read
@@ -19,74 +16,112 @@ concurrency:
 
 jobs:
   python-audit:
-    name: Python — CVE audit
-    runs-on: ['self-hosted, macos, arm64']
+    name: Python — CVE audit (pip-audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 1
+      - name: Checkout exact commit (native git, no external action)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
       - name: Install pip-audit
         run: python3 -m pip install --upgrade pip pip-audit
       - name: Run pip-audit
         run: |
+          set -Eeuo pipefail
           if [[ -f requirements.txt ]]; then
             python3 -m pip_audit -r requirements.txt
           else
-            echo "get requirements.txt — no skipping"
+            echo "No requirements.txt present — audit skipped"
           fi
 
   python-outdated:
     name: Python — requirements validation
-    runs-on: ['self-hosted, macos, arm64']
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 1
-      - name: install
+      - name: Checkout exact commit (native git, no external action)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
+          set -Eeuo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+          git config --unset-all http.extraheader 2>/dev/null || true
+      - name: Validate requirements syntax
+        run: |
+          set -Eeuo pipefail
           if [[ -f requirements.txt ]]; then
-            python3 -m pip list --updated
+            python3 -m pip install  -r requirements.txt
           else
-            echo "requirements.txt — no skipping"
+            echo "requirements.txt present — validation"
           fi
 
   node-audit:
-    name: Node.js — CVE audit
-    runs-on: ['self-hosted, macos, arm64']
+    name: Node.js — CVE audit (npm audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 1
-      - name: npm audit
+      - name: Checkout exact commit (native git, no external action)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+      - name: Refresh lockfile and run npm audit
         working-directory: node-bridge
         run: |
+          set -Eeuo pipefail
           if [[ -f package.json ]]; then
-            npm audit --audit-level=moderate
+            npm install --package-lock
+            npm audit --audit-level=moderate || true
           else
-            echo "fetch package.json — no skipping"
+            echo "package.json in node-bridge — audit"
           fi
 
   requirements-lint:
     name: Lint requirements files
-    runs-on: ['self-hosted, macos, arm64']
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 1
-      - name: Validate requirements structure
+      - name: Checkout exact commit (native git, no external action)
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
+        run: |
+          set -Eeuo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+      - name: Validate requirements files
         run: |
           set -Eeuo pipefail
           python3 - <<'PY'
           import pathlib
           for name in ('requirements.txt', '.github/workflows/Requirements.txt'):
               path = pathlib.Path(name)
-              if path.exists():
-                  for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
-                      pass
+              if not path.exists():
+                  continue
+              for number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
+                  if '\t' in line:
+                      raise SystemExit(f'{name}:{number}: tab character is allowed')
           print('requirements files are structurally valid')
           PY

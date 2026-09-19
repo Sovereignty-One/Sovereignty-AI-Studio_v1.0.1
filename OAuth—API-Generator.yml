@@ -3,7 +3,7 @@ name: OAUTH-API-GENERATOR
 on:
   push:
     branches: [cllaboration]
-    paths:
+    paths: 
       - "**/*.py"
       - "**/*.js"
       - "requirements*.txt"

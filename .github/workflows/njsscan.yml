@@ -1,0 +1,59 @@
+name: njsscan sarif
+
+on:
+  push:
+    branches: [Collaboration, main]
+  pull_request:
+    branches: [Collaboration, main]
+  schedule:
+    - cron: '28 16 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  njsscan:
+    name: njsscan (first-party)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact commit (native git, no external action)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+          git config --unset-all http.extraheader 2>/dev/null || true
+
+      - name: Install njsscan
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --no-cache-dir njsscan
+
+      - name: Scan Node sources (hard fail on findings severity)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          targets=()
+          for d in node-bridge backend .; do
+            [[ -d "$d" ]] && targets+=("$d")
+          done
+          # Prefer node-bridge if present
+          if [[ -d node-bridge ]]; then
+            scan_path=node-bridge
+          else
+            scan_path=.
+          fi
+          echo "Scanning: $scan_path"
+          # Exit non-zero if njsscan reports issues (no || true)
+          njsscan "$scan_path" --missing-controls || {
+            echo "njsscan reported findings or failed"
+            exit 1
+          }

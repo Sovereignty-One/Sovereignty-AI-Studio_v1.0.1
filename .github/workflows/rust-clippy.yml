@@ -1,0 +1,75 @@
+name: rust-clippy analyze
+
+on:
+  push:
+    branches: [Collaboration, main]
+  pull_request:
+    branches: [Collaboration, main]
+  schedule:
+    - cron: '20 4 * * 5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust-clippy:
+    name: rust-clippy (first-party)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact commit (native git, no external action)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+          git config --unset-all http.extraheader 2>/dev/null || true
+
+      - name: Install Rust toolchain
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if ! command -v rustc >/dev/null 2>&1; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal -c clippy
+          fi
+          # shellcheck disable=SC1091
+          source "$HOME/.cargo/env"
+          rustup component add clippy
+          rustc --version
+          cargo --version
+
+      - name: Run cargo clippy on first-party crates only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # shellcheck disable=SC1091
+          source "$HOME/.cargo/env"
+
+          # First-party only — skip external/, resources/configs stubs, workspace orphans
+          crates=()
+          for c in phase0 diamond-core crates/orchestrator crates/policy-engine crates/principal; do
+            if [[ -f "$c/Cargo.toml" ]]; then
+              crates+=("$c")
+            fi
+          done
+
+          if (( ${#crates[@]} == 0 )); then
+            echo "RESULT: no first-party Cargo.toml found"
+            exit 1
+          fi
+
+          failed=0
+          for dir in "${crates[@]}"; do
+            echo "=== clippy in $dir ==="
+            if ! (cd "$dir" && cargo clippy --all-targets -- -D warnings); then
+              echo "FAILED: $dir"
+              failed=1
+            fi
+          done
+          exit "$failed"

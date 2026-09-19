@@ -18,34 +18,37 @@ jobs:
   quart-tests:
     name: Quart tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 1
-      - name: Set up Python
-        uses: actions/setup-python@a309ff6b9b65696a9512b93b1046f734bb0f7a63 # v5.3.0
-        with:
-          python-version: '3.11'
-          cache: pip
-      - name: Set up isolated Python environment
+      - name: Checkout exact commit (native git, no external action)
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -Eeuo pipefail
-          python3 -m venv .ci-venv
-          . .ci-venv/bin/activate
-          python -m pip install --upgrade pip setuptools wheel
-          echo "${GITHUB_WORKSPACE}/.ci-venv/bin" >> "${GITHUB_PATH}"
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          auth="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+          git config --unset-all http.extraheader 2>/dev/null || true
+
+      - name: System Python
+        run: |
+          set -Eeuo pipefail
+          python3 --version
+          python3 -m pip install --upgrade pip
+
       - name: Install required packages
-        shell: bash
         run: |
           set -Eeuo pipefail
-          python -m pip install --no-cache-dir quart fastapi nacl pydantic pytest-asyncio
+          # pynacl is the correct PyPI package name (import name is still nacl)
+          python3 -m pip install --no-cache-dir quart fastapi pynacl pydantic pytest-asyncio
+
       - name: Verify required imports
-        shell: bash
         run: |
           set -Eeuo pipefail
-          python - <<'PY'
+          python3 - <<'PY'
           import fastapi
           import nacl
           import pydantic
